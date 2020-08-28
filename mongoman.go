@@ -25,7 +25,7 @@ func (m mgoman) getOne(database string, table string, filter bson.M) (bson.Raw, 
 	//fmt.Println("database: ", database)
 	//fmt.Println("table: ", table)
 	//fmt.Println("filter: ", filter)
-	////////////////////////////////////
+	//////////////////////////////////////
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
