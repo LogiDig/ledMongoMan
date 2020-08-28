@@ -20,7 +20,7 @@ type mgoman struct {
 }
 
 func (m mgoman) getOne(database string, table string, filter bson.M) (bson.Raw, error) {
-	//Debug:
+	//Debug:///////////////////////////////
 	//fmt.Println("type: single")
 	//fmt.Println("database: ", database)
 	//fmt.Println("table: ", table)
