@@ -255,6 +255,38 @@ func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *op
 	return result.DeletedCount, nil
 }
 
+//DeleteAll document.
+func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
+	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = client.Connect(ctx)
+
+	if err != nil {
+		return 0, err
+	}
+
+	defer client.Disconnect(ctx)
+	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	err = client.Ping(ctx, readpref.Primary())
+
+	if err != nil {
+		return 0, err
+	}
+
+	collection := client.Database(database).Collection(table)
+
+	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	result, err := collection.DeleteMany(ctx, filter, opts)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.DeletedCount, nil
+}
+
 //Count Count documents.
 func (m MgoMan) Count(database string, table string, filter bson.M, opts *options.CountOptions) (int64, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
