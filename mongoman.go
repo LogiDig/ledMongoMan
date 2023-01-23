@@ -309,7 +309,7 @@ func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *op
 
 //Count Count documents.
 func (m MgoMan) Count(database string, table string, filter bson.M, opts *options.CountOptions) (int64, error) {
-	log.Infoln("TEEEST!")
+
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
 		log.Errorln("[0211cgo.008] ", err)
