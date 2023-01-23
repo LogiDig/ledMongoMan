@@ -32,7 +32,7 @@ func (m MgoMan) GetOne(database string, table string, filter bson.M, opts *optio
 	if err != nil {
 		log.Errorln("[0211cgo] ", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
@@ -42,7 +42,7 @@ func (m MgoMan) GetOne(database string, table string, filter bson.M, opts *optio
 	}
 
 	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
 
@@ -53,7 +53,7 @@ func (m MgoMan) GetOne(database string, table string, filter bson.M, opts *optio
 
 	collection := client.Database(database).Collection(table)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	var result bson.Raw
 	if opts != nil {
@@ -76,7 +76,7 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 	if err != nil {
 		log.Errorln("[0211cgo.002] ", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
@@ -86,7 +86,7 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 	}
 
 	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
 
@@ -100,7 +100,7 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 
 	var results []bson.Raw
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	collection := client.Database(database).Collection(table)
 
@@ -133,7 +133,7 @@ func (m MgoMan) PushOne(database string, table string, data interface{}) (interf
 	if err != nil {
 		log.Errorln("[0211cgo.003] ", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
@@ -142,7 +142,7 @@ func (m MgoMan) PushOne(database string, table string, data interface{}) (interf
 	}
 
 	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
 
@@ -152,7 +152,7 @@ func (m MgoMan) PushOne(database string, table string, data interface{}) (interf
 
 	collection := client.Database(database).Collection(table)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	insertResult, err := collection.InsertOne(ctx, data)
@@ -170,7 +170,7 @@ func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([
 	if err != nil {
 		log.Errorln("[0211cgo.004] ", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
@@ -179,7 +179,7 @@ func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([
 	}
 
 	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
 
@@ -189,7 +189,7 @@ func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([
 
 	collection := client.Database(database).Collection(table)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	insertManyResult, err := collection.InsertMany(ctx, filters)
@@ -207,7 +207,7 @@ func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update b
 	if err != nil {
 		log.Errorln("[0211cgo.005] ", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
@@ -216,7 +216,7 @@ func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update b
 	}
 
 	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
 
@@ -226,7 +226,7 @@ func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update b
 
 	collection := client.Database(database).Collection(table)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	updateResult, err := collection.UpdateOne(ctx, filter, update)
 
@@ -243,7 +243,7 @@ func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *op
 	if err != nil {
 		log.Errorln("[0211cgo.006] ", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
@@ -252,7 +252,7 @@ func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *op
 	}
 
 	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
 
@@ -262,7 +262,7 @@ func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *op
 
 	collection := client.Database(database).Collection(table)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	result, err := collection.DeleteOne(ctx, filter, opts)
 	if err != nil {
@@ -278,7 +278,7 @@ func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *op
 	if err != nil {
 		log.Errorln("[0211cgo.007] ", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
@@ -287,7 +287,7 @@ func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *op
 	}
 
 	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
 
@@ -297,7 +297,7 @@ func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *op
 
 	collection := client.Database(database).Collection(table)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	result, err := collection.DeleteMany(ctx, filter, opts)
 	if err != nil {
@@ -314,7 +314,7 @@ func (m MgoMan) Count(database string, table string, filter bson.M, opts *option
 	if err != nil {
 		log.Errorln("[0211cgo.008] ", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
@@ -323,7 +323,7 @@ func (m MgoMan) Count(database string, table string, filter bson.M, opts *option
 	}
 
 	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
 
@@ -333,7 +333,7 @@ func (m MgoMan) Count(database string, table string, filter bson.M, opts *option
 
 	collection := client.Database(database).Collection(table)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	result, err := collection.CountDocuments(ctx, filter, opts)
 	if err != nil {
