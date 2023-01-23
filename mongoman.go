@@ -2,7 +2,6 @@ package mongoman
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -30,12 +29,15 @@ func New(mgoDBhost string) MgoMan {
 //GetOne Simplifies get data.
 func (m MgoMan) GetOne(database string, table string, filter bson.M, opts *options.FindOneOptions) (bson.Raw, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		log.Errorln("[0211cgo] ", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
 	if err != nil {
-		fmt.Println("[0211] ", err)
+		log.Errorln("[0211] ", err)
 		return nil, err
 	}
 
@@ -45,7 +47,7 @@ func (m MgoMan) GetOne(database string, table string, filter bson.M, opts *optio
 	err = client.Ping(ctx, readpref.Primary())
 
 	if err != nil {
-		fmt.Println("[0212] ", err)
+		log.Errorln("[0212] ", err)
 		return nil, err
 	}
 
@@ -71,12 +73,15 @@ func (m MgoMan) GetOne(database string, table string, filter bson.M, opts *optio
 //GetAll Simplifies get massive data.
 func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *options.FindOptions) ([]bson.Raw, error) { //([]interface{}, error)
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		log.Errorln("[0211cgo.002] ", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
 
 	if err != nil {
-		fmt.Println("[124121] ", err)
+		log.Errorln("[124121] ", err)
 		return nil, err
 	}
 
@@ -86,7 +91,7 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 	err = client.Ping(ctx, readpref.Primary())
 
 	if err != nil {
-		fmt.Println("[124122] ", err)
+		log.Errorln("[124122] ", err)
 		return nil, err
 	}
 
@@ -101,7 +106,7 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 
 	cur, err := collection.Find(ctx, filter, opts)
 	if err != nil {
-		fmt.Println("[12413] ", err)
+		log.Errorln("[12413] ", err)
 		return nil, err
 	}
 
@@ -113,7 +118,7 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 	}
 
 	if err := cur.Err(); err != nil {
-		fmt.Println("[124124] ", err)
+		log.Errorln("[124124] ", err)
 		return nil, err
 	}
 
@@ -125,6 +130,9 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 //PushOne Simplifies write data.
 func (m MgoMan) PushOne(database string, table string, data interface{}) (interface{}, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		log.Errorln("[0211cgo.003] ", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
@@ -159,6 +167,9 @@ func (m MgoMan) PushOne(database string, table string, data interface{}) (interf
 //PushAll Simplifies write massive data.
 func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([]interface{}, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		log.Errorln("[0211cgo.004] ", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
@@ -193,6 +204,9 @@ func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([
 //UpdateOne Simplifies update data.
 func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		log.Errorln("[0211cgo.005] ", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
@@ -226,6 +240,9 @@ func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update b
 //DeleteOne document.
 func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		log.Errorln("[0211cgo.006] ", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
@@ -258,6 +275,9 @@ func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *op
 //DeleteAll document.
 func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		log.Errorln("[0211cgo.007] ", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
@@ -289,7 +309,11 @@ func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *op
 
 //Count Count documents.
 func (m MgoMan) Count(database string, table string, filter bson.M, opts *options.CountOptions) (int64, error) {
+	log.Infoln("TEEEST!")
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		log.Errorln("[0211cgo.008] ", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = client.Connect(ctx)
