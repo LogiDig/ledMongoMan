@@ -27,15 +27,12 @@ func (m MgoMan) conn(ctx context.Context, cancel context.CancelFunc) (*mongo.Cli
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
 		return nil, err
-		return nil, err
 	}
 	err = client.Ping(ctx, readpref.Primary())
 
 	if err != nil {
 		return nil, err
-		return nil, err
 	}
-	return client, nil
 	return client, nil
 }
 
@@ -44,21 +41,15 @@ func (m MgoMan) conn(ctx context.Context, cancel context.CancelFunc) (*mongo.Cli
 func (m MgoMan) disconn(client *mongo.Client, ctx context.Context) {
 	if err := client.Disconnect(ctx); err != nil {
 		return
-		return
 	}
 }
 
-// GetOne Simplifies get one record.
 // GetOne Simplifies get one record.
 func (m MgoMan) GetOne(database, table string, filter bson.M, opts *options.FindOneOptions) (bson.Raw, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := m.conn(ctx, cancel)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	client, err := m.conn(ctx, cancel)
 	if err != nil {
-		return nil, err
 		return nil, err
 	}
 
@@ -71,15 +62,7 @@ func (m MgoMan) GetOne(database, table string, filter bson.M, opts *options.Find
 		if err != nil {
 			return nil, err
 		}
-		result, err = collection.FindOne(ctx, filter, opts).Raw()
-		if err != nil {
-			return nil, err
-		}
 	} else {
-		result, err = collection.FindOne(ctx, filter).Raw()
-		if err != nil {
-			return nil, err
-		}
 		result, err = collection.FindOne(ctx, filter).Raw()
 		if err != nil {
 			return nil, err
@@ -92,17 +75,12 @@ func (m MgoMan) GetOne(database, table string, filter bson.M, opts *options.Find
 // GetAll Simplifies get multiple data.
 func (m MgoMan) GetAll(database, table string, filter bson.M, opts *options.FindOptions) ([]bson.Raw, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// GetAll Simplifies get multiple data.
-func (m MgoMan) GetAll(database, table string, filter bson.M, opts *options.FindOptions) ([]bson.Raw, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
 	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return nil, err
 	}
 
-	defer m.disconn(client, ctx)
 	defer m.disconn(client, ctx)
 
 	var results []bson.Raw
@@ -130,16 +108,12 @@ func (m MgoMan) GetAll(database, table string, filter bson.M, opts *options.Find
 // PushOne Simplifies write data.
 func (m MgoMan) PushOne(database, table string, data interface{}) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-func (m MgoMan) PushOne(database, table string, data interface{}) (interface{}, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
 	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return nil, err
 	}
 
-	defer m.disconn(client, ctx)
 	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
 	insertResult, err := collection.InsertOne(ctx, data)
@@ -154,17 +128,12 @@ func (m MgoMan) PushOne(database, table string, data interface{}) (interface{}, 
 // PushAll Simplifies write multiple data.
 func (m MgoMan) PushAll(database, table string, filters []interface{}) ([]interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// PushAll Simplifies write multiple data.
-func (m MgoMan) PushAll(database, table string, filters []interface{}) ([]interface{}, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
 	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return nil, err
 	}
 
-	defer m.disconn(client, ctx)
 	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
 	insertManyResult, err := collection.InsertMany(ctx, filters)
@@ -179,16 +148,12 @@ func (m MgoMan) PushAll(database, table string, filters []interface{}) ([]interf
 // UpdateOne Simplifies update data.
 func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
 	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return 0, err
 	}
 
-	defer m.disconn(client, ctx)
 	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
 	updateResult, err := collection.UpdateOne(ctx, filter, update)
@@ -203,17 +168,12 @@ func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, 
 // DeleteOne delete one document.
 func (m MgoMan) DeleteOne(database, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// DeleteOne delete one document.
-func (m MgoMan) DeleteOne(database, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
 	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return 0, err
 	}
 
-	defer m.disconn(client, ctx)
 	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
 	result, err := collection.DeleteOne(ctx, filter, opts)
@@ -227,17 +187,12 @@ func (m MgoMan) DeleteOne(database, table string, filter bson.M, opts *options.D
 // DeleteAll delete multiple documents.
 func (m MgoMan) DeleteAll(database, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// DeleteAll delete multiple documents.
-func (m MgoMan) DeleteAll(database, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
 	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return 0, err
 	}
 
-	defer m.disconn(client, ctx)
 	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
 	result, err := collection.DeleteMany(ctx, filter, opts)
@@ -251,21 +206,15 @@ func (m MgoMan) DeleteAll(database, table string, filter bson.M, opts *options.D
 // Count shows total mumber of documents.
 func (m MgoMan) Count(database, table string, filter bson.M, opts *options.CountOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// Count shows total mumber of documents.
-func (m MgoMan) Count(database, table string, filter bson.M, opts *options.CountOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
 	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return 0, err
 	}
 
 	defer m.disconn(client, ctx)
-	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
 	result, err := collection.CountDocuments(ctx, filter, opts)
-
 
 	if err != nil {
 		return 0, err
