@@ -4,15 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-)
-
-var (
-	log = logrus.New()
 )
 
 // MgoMan is the struct for mongo manager
@@ -28,35 +23,36 @@ func New(mgoDBhost string) MgoMan {
 
 //Make a connection
 
-func (m MgoMan) conn() (*mongo.Client, context.Context, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m MgoMan) conn(ctx context.Context, cancel context.CancelFunc) (*mongo.Client, error) {
+	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	//defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	err = client.Ping(ctx, readpref.Primary())
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return client, ctx, nil
+	return client, nil
 }
 
 //Disconnect
 
 func (m MgoMan) disconn(client *mongo.Client, ctx context.Context) {
 	if err := client.Disconnect(ctx); err != nil {
-		log.Fatalln(err)
+		return
 	}
 }
 
-// GetOne Simplifies get data.
+// GetOne Simplifies get one record.
 func (m MgoMan) GetOne(database, table string, filter bson.M, opts *options.FindOneOptions) (bson.Raw, error) {
-
-	client, ctx, err := m.conn()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client, err := m.conn(ctx, cancel)
 	if err != nil {
-		log.Errorln("[0211cgo.001] ", err)
+		return nil, err
 	}
 
 	defer m.disconn(client, ctx)
@@ -64,63 +60,45 @@ func (m MgoMan) GetOne(database, table string, filter bson.M, opts *options.Find
 
 	var result bson.Raw
 	if opts != nil {
-		result, err = collection.FindOne(ctx, filter, opts).DecodeBytes()
+		result, err = collection.FindOne(ctx, filter, opts).Raw()
+		if err != nil {
+			return nil, err
+		}
 	} else {
-		result, err = collection.FindOne(ctx, filter).DecodeBytes()
+		result, err = collection.FindOne(ctx, filter).Raw()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return result, nil
 }
 
-// GetAll Simplifies get massive data.
-func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *options.FindOptions) ([]bson.Raw, error) { //([]interface{}, error)
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
-	if err != nil {
-		log.Errorln("[0211cgo.002] ", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+// GetAll Simplifies get multiple data.
+func (m MgoMan) GetAll(database, table string, filter bson.M, opts *options.FindOptions) ([]bson.Raw, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
-
+	client, err := m.conn(ctx, cancel)
 	if err != nil {
-		log.Errorln("[124121] ", err)
 		return nil, err
 	}
 
-	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
-
-	if err != nil {
-		log.Errorln("[124122] ", err)
-		return nil, err
-	}
-
-	//findOptions := options.Find()
-	//findOptions.SetLimit(limit)
+	defer m.disconn(client, ctx)
 
 	var results []bson.Raw
-
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
 	collection := client.Database(database).Collection(table)
 
 	cur, err := collection.Find(ctx, filter, opts)
 	if err != nil {
-		log.Errorln("[12413] ", err)
 		return nil, err
 	}
 
-	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 	for cur.Next(ctx) {
 		leItem := cur.Current
 		results = append(results, leItem)
 	}
 
 	if err := cur.Err(); err != nil {
-		log.Errorln("[124124] ", err)
 		return nil, err
 	}
 
@@ -130,33 +108,16 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 }
 
 // PushOne Simplifies write data.
-func (m MgoMan) PushOne(database string, table string, data interface{}) (interface{}, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
-	if err != nil {
-		log.Errorln("[0211cgo.003] ", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+func (m MgoMan) PushOne(database, table string, data interface{}) (interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
-
+	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return nil, err
 	}
 
-	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
-
-	if err != nil {
-		return nil, err
-	}
-
+	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
-
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
 	insertResult, err := collection.InsertOne(ctx, data)
 
 	if err != nil {
@@ -166,34 +127,17 @@ func (m MgoMan) PushOne(database string, table string, data interface{}) (interf
 	return insertResult.InsertedID, nil
 }
 
-// PushAll Simplifies write massive data.
-func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([]interface{}, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
-	if err != nil {
-		log.Errorln("[0211cgo.004] ", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+// PushAll Simplifies write multiple data.
+func (m MgoMan) PushAll(database, table string, filters []interface{}) ([]interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
-
+	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return nil, err
 	}
 
-	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
-
-	if err != nil {
-		return nil, err
-	}
-
+	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
-
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
 	insertManyResult, err := collection.InsertMany(ctx, filters)
 
 	if err != nil {
@@ -204,32 +148,16 @@ func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([
 }
 
 // UpdateOne Simplifies update data.
-func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
-	if err != nil {
-		log.Errorln("[0211cgo.005] ", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
-
+	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return 0, err
 	}
 
-	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
-
-	if err != nil {
-		return 0, err
-	}
-
+	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
-
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
 	updateResult, err := collection.UpdateOne(ctx, filter, update)
 
 	if err != nil {
@@ -239,33 +167,17 @@ func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update b
 	return updateResult.ModifiedCount, nil
 }
 
-// DeleteOne document.
-func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
-	if err != nil {
-		log.Errorln("[0211cgo.006] ", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+// DeleteOne delete one document.
+func (m MgoMan) DeleteOne(database, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
-
+	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return 0, err
 	}
 
-	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
-
-	if err != nil {
-		return 0, err
-	}
-
+	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
-
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
 	result, err := collection.DeleteOne(ctx, filter, opts)
 	if err != nil {
 		return 0, err
@@ -274,33 +186,17 @@ func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *op
 	return result.DeletedCount, nil
 }
 
-// DeleteAll document.
-func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
-	if err != nil {
-		log.Errorln("[0211cgo.007] ", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+// DeleteAll delete multiple documents.
+func (m MgoMan) DeleteAll(database, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
-
+	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return 0, err
 	}
 
-	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
-
-	if err != nil {
-		return 0, err
-	}
-
+	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
-
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
 	result, err := collection.DeleteMany(ctx, filter, opts)
 	if err != nil {
 		return 0, err
@@ -309,35 +205,19 @@ func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *op
 	return result.DeletedCount, nil
 }
 
-// Count Count documents.
-func (m MgoMan) Count(database string, table string, filter bson.M, opts *options.CountOptions) (int64, error) {
-
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
-	if err != nil {
-		log.Errorln("[0211cgo.008] ", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+// Count shows total mumber of documents.
+func (m MgoMan) Count(database, table string, filter bson.M, opts *options.CountOptions) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
-
+	client, err := m.conn(ctx, cancel)
 	if err != nil {
 		return 0, err
 	}
 
-	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
-
-	if err != nil {
-		return 0, err
-	}
-
+	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
-
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
 	result, err := collection.CountDocuments(ctx, filter, opts)
+
 	if err != nil {
 		return 0, err
 	}
