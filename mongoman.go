@@ -15,62 +15,64 @@ var (
 	log = logrus.New()
 )
 
-//MgoMan is the struct for mongo manager
+// MgoMan is the struct for mongo manager
 type MgoMan struct {
 	mongoDBHost string
 }
 
-//New Set initial params
+// New Set initial params
 func New(mgoDBhost string) MgoMan {
 	r := MgoMan{mongoDBHost: mgoDBhost}
 	return r
 }
 
-//GetOne Simplifies get data.
-func (m MgoMan) GetOne(database string, table string, filter bson.M, opts *options.FindOneOptions) (bson.Raw, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
-	if err != nil {
-		log.Errorln("[0211cgo] ", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	err = client.Connect(ctx)
+//Make a connection
 
-	if err != nil {
-		log.Errorln("[0211] ", err)
-		return nil, err
-	}
-
-	defer client.Disconnect(ctx)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
+func (m MgoMan) conn() (*mongo.Client, context.Context, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(m.mongoDBHost))
+	if err != nil {
+		return nil, nil, err
+	}
 	err = client.Ping(ctx, readpref.Primary())
 
 	if err != nil {
-		log.Errorln("[0212] ", err)
-		return nil, err
+		return nil, nil, err
+	}
+	return client, ctx, nil
+}
+
+//Disconnect
+
+func (m MgoMan) disconn(client *mongo.Client, ctx context.Context) {
+	if err := client.Disconnect(ctx); err != nil {
+		log.Fatalln(err)
+	}
+}
+
+// GetOne Simplifies get data.
+func (m MgoMan) GetOne(database, table string, filter bson.M, opts *options.FindOneOptions) (bson.Raw, error) {
+
+	client, ctx, err := m.conn()
+	if err != nil {
+		log.Errorln("[0211cgo.001] ", err)
 	}
 
+	defer m.disconn(client, ctx)
 	collection := client.Database(database).Collection(table)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
 	var result bson.Raw
 	if opts != nil {
 		result, err = collection.FindOne(ctx, filter, opts).DecodeBytes()
 	} else {
 		result, err = collection.FindOne(ctx, filter).DecodeBytes()
 	}
-	//result, err := collection.FindOne(ctx, filter, opts).DecodeBytes()
-
-	if err != nil {
-		return nil, err
-	}
 
 	return result, nil
 }
 
-//GetAll Simplifies get massive data.
+// GetAll Simplifies get massive data.
 func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *options.FindOptions) ([]bson.Raw, error) { //([]interface{}, error)
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
@@ -127,7 +129,7 @@ func (m MgoMan) GetAll(database string, table string, filter bson.M, opts *optio
 	return results, nil
 }
 
-//PushOne Simplifies write data.
+// PushOne Simplifies write data.
 func (m MgoMan) PushOne(database string, table string, data interface{}) (interface{}, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
@@ -164,7 +166,7 @@ func (m MgoMan) PushOne(database string, table string, data interface{}) (interf
 	return insertResult.InsertedID, nil
 }
 
-//PushAll Simplifies write massive data.
+// PushAll Simplifies write massive data.
 func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([]interface{}, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
@@ -201,7 +203,7 @@ func (m MgoMan) PushAll(database string, table string, filters []interface{}) ([
 	return insertManyResult.InsertedIDs, nil
 }
 
-//UpdateOne Simplifies update data.
+// UpdateOne Simplifies update data.
 func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
@@ -237,7 +239,7 @@ func (m MgoMan) UpdateOne(database string, table string, filter bson.M, update b
 	return updateResult.ModifiedCount, nil
 }
 
-//DeleteOne document.
+// DeleteOne document.
 func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
@@ -272,7 +274,7 @@ func (m MgoMan) DeleteOne(database string, table string, filter bson.M, opts *op
 	return result.DeletedCount, nil
 }
 
-//DeleteAll document.
+// DeleteAll document.
 func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *options.DeleteOptions) (int64, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
@@ -307,7 +309,7 @@ func (m MgoMan) DeleteAll(database string, table string, filter bson.M, opts *op
 	return result.DeletedCount, nil
 }
 
-//Count Count documents.
+// Count Count documents.
 func (m MgoMan) Count(database string, table string, filter bson.M, opts *options.CountOptions) (int64, error) {
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(m.mongoDBHost))
