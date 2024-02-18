@@ -105,7 +105,7 @@ func (m MgoMan) GetAll(database, table string, filter bson.M, opts *options.Find
 	return results, nil
 }
 
-// PushOne Simplifies write data.
+// PushOne Simplifies write one element.
 func (m MgoMan) PushOne(database, table string, data interface{}) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -145,7 +145,7 @@ func (m MgoMan) PushAll(database, table string, filters []interface{}) ([]interf
 	return insertManyResult.InsertedIDs, nil
 }
 
-// UpdateOne Simplifies update data.
+// UpdateOne Simplifies update one element.
 func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

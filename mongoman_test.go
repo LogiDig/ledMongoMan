@@ -29,7 +29,7 @@ func TestReadMulti(t *testing.T) {
 	db := "ledCert"
 	tbl := "areas"
 	fil := bson.M{}
-	_, err := mgoman.GetAll(
+	_, err := mgoman.GetMany(
 		db,
 		tbl,
 		fil,
