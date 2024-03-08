@@ -23,7 +23,7 @@ func New(mgoDBhost string) MgoMan {
 
 //Make a connection.
 
-func (m MgoMan) conn(ctx context.Context, cancel context.CancelFunc) (*mongo.Client, error) {
+func (m MgoMan) conn(ctx context.Context) (*mongo.Client, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (m MgoMan) disconn(client *mongo.Client, ctx context.Context) {
 func (m MgoMan) GetOne(database, table string, filter bson.M, opts ...*options.FindOneOptions) (bson.Raw, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (m MgoMan) GetOne(database, table string, filter bson.M, opts ...*options.F
 func (m MgoMan) GetMany(database, table string, filter bson.M, opts ...*options.FindOptions) ([]bson.Raw, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (m MgoMan) GetMany(database, table string, filter bson.M, opts ...*options.
 func (m MgoMan) PushOne(database, table string, data interface{}, opts ...*options.InsertOneOptions) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (m MgoMan) PushOne(database, table string, data interface{}, opts ...*optio
 func (m MgoMan) PushMany(database, table string, data []interface{}, opts ...*options.InsertManyOptions) ([]interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (m MgoMan) PushMany(database, table string, data []interface{}, opts ...*op
 func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -163,7 +163,7 @@ func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, 
 func (m MgoMan) UpdateMany(database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -183,7 +183,7 @@ func (m MgoMan) UpdateMany(database, table string, filter bson.M, update bson.M,
 func (m MgoMan) DeleteOne(database, table string, filter bson.M, opts ...*options.DeleteOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -202,7 +202,7 @@ func (m MgoMan) DeleteOne(database, table string, filter bson.M, opts ...*option
 func (m MgoMan) DeleteMany(database, table string, filter bson.M, opts ...*options.DeleteOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -221,7 +221,7 @@ func (m MgoMan) DeleteMany(database, table string, filter bson.M, opts ...*optio
 func (m MgoMan) Count(database, table string, filter bson.M, opts ...*options.CountOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := m.conn(ctx, cancel)
+	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err
 	}
