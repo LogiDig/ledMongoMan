@@ -1,0 +1,15 @@
+*
+!*.*
+!*/
+
+*.log
+*.cer
+*.key
+*.txt
+*.xml
+*.tar
+*.gz
+*.png
+*.jpg
+*.pdf
+playground/
