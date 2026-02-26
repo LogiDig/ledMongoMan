@@ -16,14 +16,14 @@ type MgoMan struct {
 }
 
 // New Set initial params.
-func New(mgoDBhost string) MgoMan {
-	r := MgoMan{mongoDBHost: mgoDBhost}
+func New(mgoDBhost string) *MgoMan {
+	r := &MgoMan{mongoDBHost: mgoDBhost}
 	return r
 }
 
 //Make a connection.
 
-func (m MgoMan) conn(ctx context.Context) (*mongo.Client, error) {
+func (m *MgoMan) conn(ctx context.Context) (*mongo.Client, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(m.mongoDBHost))
 	if err != nil {
 		return nil, err
@@ -38,16 +38,14 @@ func (m MgoMan) conn(ctx context.Context) (*mongo.Client, error) {
 
 //Disconnect.
 
-func (m MgoMan) disconn(client *mongo.Client, ctx context.Context) {
+func (m *MgoMan) disconn(client *mongo.Client, ctx context.Context) {
 	if err := client.Disconnect(ctx); err != nil {
 		return
 	}
 }
 
 // GetOne Simplifies get one document.
-func (m MgoMan) GetOne(database, table string, filter bson.M, opts ...*options.FindOneOptions) (bson.Raw, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m *MgoMan) GetOne(ctx context.Context, database, table string, filter any, opts ...*options.FindOneOptions) (bson.Raw, error) {
 	client, err := m.conn(ctx)
 	if err != nil {
 		return nil, err
@@ -66,9 +64,7 @@ func (m MgoMan) GetOne(database, table string, filter bson.M, opts ...*options.F
 }
 
 // GetMany Simplifies get multiple documents.
-func (m MgoMan) GetMany(database, table string, filter bson.M, opts ...*options.FindOptions) ([]bson.Raw, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m *MgoMan) GetMany(ctx context.Context, database, table string, filter any, opts ...*options.FindOptions) ([]bson.Raw, error) {
 	client, err := m.conn(ctx)
 	if err != nil {
 		return nil, err
@@ -84,6 +80,8 @@ func (m MgoMan) GetMany(database, table string, filter bson.M, opts ...*options.
 		return nil, err
 	}
 
+	defer cur.Close(ctx)
+
 	for cur.Next(ctx) {
 		leItem := cur.Current
 		results = append(results, leItem)
@@ -93,16 +91,13 @@ func (m MgoMan) GetMany(database, table string, filter bson.M, opts ...*options.
 		return nil, err
 	}
 
-	cur.Close(ctx)
 	//results = reverse(results)
 
 	return results, nil
 }
 
 // PushOne Simplifies write one document.
-func (m MgoMan) PushOne(database, table string, data interface{}, opts ...*options.InsertOneOptions) (interface{}, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m *MgoMan) PushOne(ctx context.Context, database, table string, data any, opts ...*options.InsertOneOptions) (any, error) {
 	client, err := m.conn(ctx)
 	if err != nil {
 		return nil, err
@@ -120,9 +115,7 @@ func (m MgoMan) PushOne(database, table string, data interface{}, opts ...*optio
 }
 
 // PushMany Simplifies write multiple document.
-func (m MgoMan) PushMany(database, table string, data []interface{}, opts ...*options.InsertManyOptions) ([]interface{}, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m *MgoMan) PushMany(ctx context.Context, database, table string, data []any, opts ...*options.InsertManyOptions) ([]any, error) {
 	client, err := m.conn(ctx)
 	if err != nil {
 		return nil, err
@@ -140,7 +133,7 @@ func (m MgoMan) PushMany(database, table string, data []interface{}, opts ...*op
 }
 
 // UpdateOne Simplifies update one document.
-func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
+func (m *MgoMan) UpdateOne(ctx context.Context, database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := m.conn(ctx)
@@ -160,9 +153,7 @@ func (m MgoMan) UpdateOne(database, table string, filter bson.M, update bson.M, 
 }
 
 // UpdateMany Simplifies update multiple documents.
-func (m MgoMan) UpdateMany(database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m *MgoMan) UpdateMany(ctx context.Context, database, table string, filter any, update any, opts ...*options.UpdateOptions) (int64, error) {
 	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err
@@ -180,9 +171,7 @@ func (m MgoMan) UpdateMany(database, table string, filter bson.M, update bson.M,
 }
 
 // DeleteOne delete one document.
-func (m MgoMan) DeleteOne(database, table string, filter bson.M, opts ...*options.DeleteOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m *MgoMan) DeleteOne(ctx context.Context, database, table string, filter bson.M, opts ...*options.DeleteOptions) (int64, error) {
 	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err
@@ -199,9 +188,7 @@ func (m MgoMan) DeleteOne(database, table string, filter bson.M, opts ...*option
 }
 
 // DeleteMany delete multiple documents.
-func (m MgoMan) DeleteMany(database, table string, filter bson.M, opts ...*options.DeleteOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m *MgoMan) DeleteMany(ctx context.Context, database, table string, filter any, opts ...*options.DeleteOptions) (int64, error) {
 	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err
@@ -218,9 +205,7 @@ func (m MgoMan) DeleteMany(database, table string, filter bson.M, opts ...*optio
 }
 
 // Count shows total mumber of documents.
-func (m MgoMan) Count(database, table string, filter bson.M, opts ...*options.CountOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (m *MgoMan) Count(ctx context.Context, database, table string, filter bson.M, opts ...*options.CountOptions) (int64, error) {
 	client, err := m.conn(ctx)
 	if err != nil {
 		return 0, err

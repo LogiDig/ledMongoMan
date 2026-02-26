@@ -1,6 +1,7 @@
 module github.com/LogiDig/ledMongoMan
 
-go 1.22.0
+go 1.23.0
+
 toolchain go1.24.1
 
 require go.mongodb.org/mongo-driver v1.17.1

@@ -1,6 +1,7 @@
 package mongoman
 
 import (
+	"context"
 	"testing"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -24,7 +25,10 @@ func TestWriteOne(t *testing.T) {
 		Summary:  "A fruit",
 		Disabled: false,
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := mgoman.PushOne(
+		ctx,
 		db,
 		tbl,
 		d,
@@ -69,7 +73,10 @@ func TestWriteMulti(t *testing.T) {
 	for _, v := range dd {
 		d2s = append(d2s, v)
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := mgoman.PushMany(
+		ctx,
 		db,
 		tbl,
 		d2s,
@@ -89,7 +96,10 @@ func TestUpdateOne(t *testing.T) {
 	update := bson.M{"$set": bson.M{
 		"Summary": "A fruit.",
 	}}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := mgoman.UpdateOne(
+		ctx,
 		db,
 		tbl,
 		filter,
@@ -109,8 +119,10 @@ func TestUpdateMulti(t *testing.T) {
 	update := bson.M{"$set": bson.M{
 		"Disabled": true,
 	}}
-
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := mgoman.UpdateOne(
+		ctx,
 		db,
 		tbl,
 		filter,
@@ -127,7 +139,10 @@ func TestDeleteOne(t *testing.T) {
 	db := "ledDB"
 	tbl := "products"
 	filter := bson.M{"Name": "Lemon"}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := mgoman.DeleteOne(
+		ctx,
 		db,
 		tbl,
 		filter,
@@ -143,7 +158,10 @@ func TestDeleteMulti(t *testing.T) {
 	db := "ledDB"
 	tbl := "products"
 	filter := bson.M{"Disabled": false}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := mgoman.DeleteMany(
+		ctx,
 		db,
 		tbl,
 		filter,
@@ -159,7 +177,10 @@ func TestReadOne(t *testing.T) {
 	db := "ledDB"
 	tbl := "products"
 	fil := bson.M{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := mgoman.GetOne(
+		ctx,
 		db,
 		tbl,
 		fil,
@@ -176,7 +197,10 @@ func TestReadMulti(t *testing.T) {
 	db := "ledDB"
 	tbl := "products"
 	fil := bson.M{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := mgoman.GetMany(
+		ctx,
 		db,
 		tbl,
 		fil,
