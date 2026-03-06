@@ -1,7 +1,6 @@
 package mongoman
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -17,13 +16,12 @@ type dataA struct {
 }
 
 func TestWriteOne(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	uri := "mongodb://localhost:27017"
 	db := "ledDB"
 	mgoman, err := New(uri, db, time.Second*3)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	tbl := "products"
@@ -42,18 +40,17 @@ func TestWriteOne(t *testing.T) {
 		nil,
 	)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 }
 
 func TestWriteMulti(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	uri := "mongodb://localhost:27017"
 	db := "ledDB"
 	mgoman, err := New(uri, db, time.Second*3)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	tbl := "products"
@@ -95,18 +92,17 @@ func TestWriteMulti(t *testing.T) {
 		nil,
 	)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 }
 
 func TestUpdateOne(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	uri := "mongodb://localhost:27017"
 	db := "ledDB"
 	mgoman, err := New(uri, db, time.Second*3)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	tbl := "products"
@@ -123,18 +119,17 @@ func TestUpdateOne(t *testing.T) {
 		update,
 	)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 }
 
 func TestUpdateMulti(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	uri := "mongodb://localhost:27017"
 	db := "ledDB"
 	mgoman, err := New(uri, db, time.Second*3)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	tbl := "products"
@@ -151,18 +146,17 @@ func TestUpdateMulti(t *testing.T) {
 		update,
 	)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 }
 
 func TestDeleteOne(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	uri := "mongodb://localhost:27017"
 	db := "ledDB"
 	mgoman, err := New(uri, db, time.Second*3)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	tbl := "products"
@@ -175,18 +169,17 @@ func TestDeleteOne(t *testing.T) {
 		filter,
 	)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 }
 
 func TestDeleteMulti(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	uri := "mongodb://localhost:27017"
 	db := "ledDB"
 	mgoman, err := New(uri, db, time.Second*3)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 	tbl := "products"
 	filter := bson.M{"Disabled": false}
@@ -198,18 +191,17 @@ func TestDeleteMulti(t *testing.T) {
 		filter,
 	)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 }
 
 func TestReadOne(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	uri := "mongodb://localhost:27017"
 	db := "ledDB"
 	mgoman, err := New(uri, db, time.Second*3)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 	tbl := "products"
 	fil := bson.M{}
@@ -222,25 +214,24 @@ func TestReadOne(t *testing.T) {
 		nil,
 	)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	fmt.Println(r)
 }
 
 func TestReadMulti(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	uri := "mongodb://localhost:27017"
 	db := "ledDB"
 	mgoman, err := New(uri, db, time.Second*3)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
-	defer mgoman.Close(ctx)
+
 	tbl := "products"
 	fil := bson.M{}
-
+	defer mgoman.Close(ctx)
 	_, err = mgoman.GetMany(
 		ctx,
 		tbl,
@@ -248,7 +239,7 @@ func TestReadMulti(t *testing.T) {
 		nil,
 	)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 }
