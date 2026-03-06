@@ -2,7 +2,9 @@ package mongoman
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -15,9 +17,15 @@ type dataA struct {
 }
 
 func TestWriteOne(t *testing.T) {
-	mongoDBHost := "mongodb://localhost:27017"
-	mgoman := New(mongoDBHost)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	uri := "mongodb://localhost:27017"
 	db := "ledDB"
+	mgoman, err := New(uri, db, time.Second*3)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
 	tbl := "products"
 	d := dataA{
 		ID:       "12154125",
@@ -25,11 +33,10 @@ func TestWriteOne(t *testing.T) {
 		Summary:  "A fruit",
 		Disabled: false,
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	_, err := mgoman.PushOne(
+
+	defer mgoman.Close(ctx)
+	_, err = mgoman.PushOne(
 		ctx,
-		db,
 		tbl,
 		d,
 		nil,
@@ -40,9 +47,15 @@ func TestWriteOne(t *testing.T) {
 }
 
 func TestWriteMulti(t *testing.T) {
-	mongoDBHost := "mongodb://localhost:27017"
-	mgoman := New(mongoDBHost)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	uri := "mongodb://localhost:27017"
 	db := "ledDB"
+	mgoman, err := New(uri, db, time.Second*3)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
 	tbl := "products"
 
 	dd := []dataA{
@@ -73,11 +86,10 @@ func TestWriteMulti(t *testing.T) {
 	for _, v := range dd {
 		d2s = append(d2s, v)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	_, err := mgoman.PushMany(
+
+	defer mgoman.Close(ctx)
+	_, err = mgoman.PushMany(
 		ctx,
-		db,
 		tbl,
 		d2s,
 		nil,
@@ -88,19 +100,24 @@ func TestWriteMulti(t *testing.T) {
 }
 
 func TestUpdateOne(t *testing.T) {
-	mongoDBHost := "mongodb://localhost:27017"
-	mgoman := New(mongoDBHost)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	uri := "mongodb://localhost:27017"
 	db := "ledDB"
+	mgoman, err := New(uri, db, time.Second*3)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
 	tbl := "products"
 	filter := bson.M{"Name": "Lemon"}
 	update := bson.M{"$set": bson.M{
 		"Summary": "A fruit.",
 	}}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	_, err := mgoman.UpdateOne(
+
+	defer mgoman.Close(ctx)
+	_, err = mgoman.UpdateOne(
 		ctx,
-		db,
 		tbl,
 		filter,
 		update,
@@ -111,19 +128,24 @@ func TestUpdateOne(t *testing.T) {
 }
 
 func TestUpdateMulti(t *testing.T) {
-	mongoDBHost := "mongodb://localhost:27017"
-	mgoman := New(mongoDBHost)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	uri := "mongodb://localhost:27017"
 	db := "ledDB"
+	mgoman, err := New(uri, db, time.Second*3)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
 	tbl := "products"
 	filter := bson.M{"Disabled": false}
 	update := bson.M{"$set": bson.M{
 		"Disabled": true,
 	}}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	_, err := mgoman.UpdateOne(
+
+	defer mgoman.Close(ctx)
+	_, err = mgoman.UpdateOne(
 		ctx,
-		db,
 		tbl,
 		filter,
 		update,
@@ -134,16 +156,21 @@ func TestUpdateMulti(t *testing.T) {
 }
 
 func TestDeleteOne(t *testing.T) {
-	mongoDBHost := "mongodb://localhost:27017"
-	mgoman := New(mongoDBHost)
-	db := "ledDB"
-	tbl := "products"
-	filter := bson.M{"Name": "Lemon"}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_, err := mgoman.DeleteOne(
+	uri := "mongodb://localhost:27017"
+	db := "ledDB"
+	mgoman, err := New(uri, db, time.Second*3)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	tbl := "products"
+	filter := bson.M{"Name": "Lemon"}
+
+	defer mgoman.Close(ctx)
+	_, err = mgoman.DeleteOne(
 		ctx,
-		db,
 		tbl,
 		filter,
 	)
@@ -153,16 +180,20 @@ func TestDeleteOne(t *testing.T) {
 }
 
 func TestDeleteMulti(t *testing.T) {
-	mongoDBHost := "mongodb://localhost:27017"
-	mgoman := New(mongoDBHost)
-	db := "ledDB"
-	tbl := "products"
-	filter := bson.M{"Disabled": false}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_, err := mgoman.DeleteMany(
+	uri := "mongodb://localhost:27017"
+	db := "ledDB"
+	mgoman, err := New(uri, db, time.Second*3)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	tbl := "products"
+	filter := bson.M{"Disabled": false}
+
+	defer mgoman.Close(ctx)
+	_, err = mgoman.DeleteMany(
 		ctx,
-		db,
 		tbl,
 		filter,
 	)
@@ -172,16 +203,20 @@ func TestDeleteMulti(t *testing.T) {
 }
 
 func TestReadOne(t *testing.T) {
-	mongoDBHost := "mongodb://localhost:27017"
-	mgoman := New(mongoDBHost)
-	db := "ledDB"
-	tbl := "products"
-	fil := bson.M{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_, err := mgoman.GetOne(
+	uri := "mongodb://localhost:27017"
+	db := "ledDB"
+	mgoman, err := New(uri, db, time.Second*3)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	tbl := "products"
+	fil := bson.M{}
+	defer mgoman.Close(ctx)
+
+	r, err := mgoman.GetOne(
 		ctx,
-		db,
 		tbl,
 		fil,
 		nil,
@@ -189,19 +224,25 @@ func TestReadOne(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
+
+	fmt.Println(r)
 }
 
 func TestReadMulti(t *testing.T) {
-	mongoDBHost := "mongodb://localhost:27017"
-	mgoman := New(mongoDBHost)
-	db := "ledDB"
-	tbl := "products"
-	fil := bson.M{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_, err := mgoman.GetMany(
+	uri := "mongodb://localhost:27017"
+	db := "ledDB"
+	mgoman, err := New(uri, db, time.Second*3)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	defer mgoman.Close(ctx)
+	tbl := "products"
+	fil := bson.M{}
+
+	_, err = mgoman.GetMany(
 		ctx,
-		db,
 		tbl,
 		fil,
 		nil,
@@ -209,4 +250,5 @@ func TestReadMulti(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
+
 }

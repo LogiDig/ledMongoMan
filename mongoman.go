@@ -7,55 +7,64 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 // MgoMan is the struct for mongo manager.
 type MgoMan struct {
-	mongoDBHost string
+	client       *mongo.Client
+	db           *mongo.Database
+	queryTimeout time.Duration
 }
 
 // New Set initial params.
-func New(mgoDBhost string) *MgoMan {
-	r := &MgoMan{mongoDBHost: mgoDBhost}
-	return r
-}
+func New(uri, dbName string, timeout time.Duration) (*MgoMan, error) {
+	clientOpts := options.Client().
+		ApplyURI(uri).
+		SetMaxPoolSize(50).
+		SetMinPoolSize(5).
+		SetRetryWrites(true)
 
-//Make a connection.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-func (m *MgoMan) conn(ctx context.Context) (*mongo.Client, error) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(m.mongoDBHost))
+	client, err := mongo.Connect(ctx, clientOpts)
 	if err != nil {
 		return nil, err
 	}
-	err = client.Ping(ctx, readpref.Primary())
 
-	if err != nil {
+	if err := client.Ping(ctx, nil); err != nil {
 		return nil, err
 	}
-	return client, nil
+
+	return &MgoMan{
+		client:       client,
+		db:           client.Database(dbName),
+		queryTimeout: timeout,
+	}, nil
 }
 
-//Disconnect.
+func (m *MgoMan) withTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(ctx, m.queryTimeout)
+}
 
-func (m *MgoMan) disconn(client *mongo.Client, ctx context.Context) {
-	if err := client.Disconnect(ctx); err != nil {
-		return
-	}
+func (m *MgoMan) Close(ctx context.Context) error {
+	return m.client.Disconnect(ctx)
+}
+
+func (m *MgoMan) Health(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	return m.client.Ping(ctx, nil)
 }
 
 // GetOne Simplifies get one document.
-func (m *MgoMan) GetOne(ctx context.Context, database, table string, filter any, opts ...*options.FindOneOptions) (bson.Raw, error) {
-	client, err := m.conn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer m.disconn(client, ctx)
-	collection := client.Database(database).Collection(table)
+func (m *MgoMan) GetOne(ctx context.Context, table string, filter any, opts ...*options.FindOneOptions) (bson.Raw, error) {
+	ctx, cancel := m.withTimeout(ctx)
+	defer cancel()
+	collection := m.db.Collection(table)
 
 	var result bson.Raw
-	result, err = collection.FindOne(ctx, filter, opts...).Raw()
+	result, err := collection.FindOne(ctx, filter, opts...).Raw()
 	if err != nil {
 		return nil, err
 	}
@@ -64,16 +73,12 @@ func (m *MgoMan) GetOne(ctx context.Context, database, table string, filter any,
 }
 
 // GetMany Simplifies get multiple documents.
-func (m *MgoMan) GetMany(ctx context.Context, database, table string, filter any, opts ...*options.FindOptions) ([]bson.Raw, error) {
-	client, err := m.conn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer m.disconn(client, ctx)
+func (m *MgoMan) GetMany(ctx context.Context, table string, filter any, opts ...*options.FindOptions) ([]bson.Raw, error) {
+	ctx, cancel := m.withTimeout(ctx)
+	defer cancel()
 
 	var results []bson.Raw
-	collection := client.Database(database).Collection(table)
+	collection := m.db.Collection(table)
 
 	cur, err := collection.Find(ctx, filter, opts...)
 	if err != nil {
@@ -97,14 +102,11 @@ func (m *MgoMan) GetMany(ctx context.Context, database, table string, filter any
 }
 
 // PushOne Simplifies write one document.
-func (m *MgoMan) PushOne(ctx context.Context, database, table string, data any, opts ...*options.InsertOneOptions) (any, error) {
-	client, err := m.conn(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (m *MgoMan) PushOne(ctx context.Context, table string, data any, opts ...*options.InsertOneOptions) (any, error) {
+	ctx, cancel := m.withTimeout(ctx)
+	defer cancel()
 
-	defer m.disconn(client, ctx)
-	collection := client.Database(database).Collection(table)
+	collection := m.db.Collection(table)
 	insertResult, err := collection.InsertOne(ctx, data, opts...)
 
 	if err != nil {
@@ -115,14 +117,12 @@ func (m *MgoMan) PushOne(ctx context.Context, database, table string, data any, 
 }
 
 // PushMany Simplifies write multiple document.
-func (m *MgoMan) PushMany(ctx context.Context, database, table string, data []any, opts ...*options.InsertManyOptions) ([]any, error) {
-	client, err := m.conn(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (m *MgoMan) PushMany(ctx context.Context, table string, data []any, opts ...*options.InsertManyOptions) ([]any, error) {
+	ctx, cancel := m.withTimeout(ctx)
+	defer cancel()
 
-	defer m.disconn(client, ctx)
-	collection := client.Database(database).Collection(table)
+	//defer m.disconn(client, ctx)
+	collection := m.db.Collection(table)
 	insertManyResult, err := collection.InsertMany(ctx, data, opts...)
 
 	if err != nil {
@@ -133,16 +133,11 @@ func (m *MgoMan) PushMany(ctx context.Context, database, table string, data []an
 }
 
 // UpdateOne Simplifies update one document.
-func (m *MgoMan) UpdateOne(ctx context.Context, database, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (m *MgoMan) UpdateOne(ctx context.Context, table string, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
+	ctx, cancel := m.withTimeout(ctx)
 	defer cancel()
-	client, err := m.conn(ctx)
-	if err != nil {
-		return 0, err
-	}
 
-	defer m.disconn(client, ctx)
-	collection := client.Database(database).Collection(table)
+	collection := m.db.Collection(table)
 	updateResult, err := collection.UpdateOne(ctx, filter, update, opts...)
 
 	if err != nil {
@@ -153,14 +148,11 @@ func (m *MgoMan) UpdateOne(ctx context.Context, database, table string, filter b
 }
 
 // UpdateMany Simplifies update multiple documents.
-func (m *MgoMan) UpdateMany(ctx context.Context, database, table string, filter any, update any, opts ...*options.UpdateOptions) (int64, error) {
-	client, err := m.conn(ctx)
-	if err != nil {
-		return 0, err
-	}
+func (m *MgoMan) UpdateMany(ctx context.Context, table string, filter any, update any, opts ...*options.UpdateOptions) (int64, error) {
+	ctx, cancel := m.withTimeout(ctx)
+	defer cancel()
 
-	defer m.disconn(client, ctx)
-	collection := client.Database(database).Collection(table)
+	collection := m.db.Collection(table)
 	updateResult, err := collection.UpdateMany(ctx, filter, update, opts...)
 
 	if err != nil {
@@ -171,14 +163,11 @@ func (m *MgoMan) UpdateMany(ctx context.Context, database, table string, filter 
 }
 
 // DeleteOne delete one document.
-func (m *MgoMan) DeleteOne(ctx context.Context, database, table string, filter bson.M, opts ...*options.DeleteOptions) (int64, error) {
-	client, err := m.conn(ctx)
-	if err != nil {
-		return 0, err
-	}
+func (m *MgoMan) DeleteOne(ctx context.Context, table string, filter bson.M, opts ...*options.DeleteOptions) (int64, error) {
+	ctx, cancel := m.withTimeout(ctx)
+	defer cancel()
 
-	defer m.disconn(client, ctx)
-	collection := client.Database(database).Collection(table)
+	collection := m.db.Collection(table)
 	result, err := collection.DeleteOne(ctx, filter, opts...)
 	if err != nil {
 		return 0, err
@@ -188,14 +177,11 @@ func (m *MgoMan) DeleteOne(ctx context.Context, database, table string, filter b
 }
 
 // DeleteMany delete multiple documents.
-func (m *MgoMan) DeleteMany(ctx context.Context, database, table string, filter any, opts ...*options.DeleteOptions) (int64, error) {
-	client, err := m.conn(ctx)
-	if err != nil {
-		return 0, err
-	}
+func (m *MgoMan) DeleteMany(ctx context.Context, table string, filter any, opts ...*options.DeleteOptions) (int64, error) {
+	ctx, cancel := m.withTimeout(ctx)
+	defer cancel()
 
-	defer m.disconn(client, ctx)
-	collection := client.Database(database).Collection(table)
+	collection := m.db.Collection(table)
 	result, err := collection.DeleteMany(ctx, filter, opts...)
 	if err != nil {
 		return 0, err
@@ -205,14 +191,11 @@ func (m *MgoMan) DeleteMany(ctx context.Context, database, table string, filter 
 }
 
 // Count shows total mumber of documents.
-func (m *MgoMan) Count(ctx context.Context, database, table string, filter bson.M, opts ...*options.CountOptions) (int64, error) {
-	client, err := m.conn(ctx)
-	if err != nil {
-		return 0, err
-	}
+func (m *MgoMan) Count(ctx context.Context, table string, filter bson.M, opts ...*options.CountOptions) (int64, error) {
+	ctx, cancel := m.withTimeout(ctx)
+	defer cancel()
 
-	defer m.disconn(client, ctx)
-	collection := client.Database(database).Collection(table)
+	collection := m.db.Collection(table)
 	result, err := collection.CountDocuments(ctx, filter, opts...)
 
 	if err != nil {
